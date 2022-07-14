@@ -53,7 +53,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         )
 
     model.compile(
-        optimizer=adam_w,
+        optimizer=tf.keras.optimizers.Adam(learning_rate=5e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
         #jit_compile=True
@@ -61,7 +61,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
 
     #model.summary()
 
-    #reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=5, min_lr=1e-6)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=5, min_lr=1e-6)
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
     early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=3, verbose=1)
 
@@ -70,7 +70,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         validation_data=val_ds,
         epochs=epochs,
         verbose=1,
-        callbacks=[terminate_nan, early_stop],
+        callbacks=[reduce_lr, terminate_nan, early_stop],
     )
 
     #tf.saved_model.save(model, "model")
