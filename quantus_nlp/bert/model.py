@@ -48,16 +48,11 @@ class Classifier(tf.keras.Model):
 
 def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs: int):
 
-    adam_w = tf.keras.optimizers.experimental.AdamW(
-            #learning_rate=5e-5,
-            #jit_compile=True
-        )
-
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
-        #jit_compile=True
+        jit_compile=True
     )
 
     #model.summary()

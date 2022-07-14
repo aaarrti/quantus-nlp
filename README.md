@@ -10,3 +10,6 @@
      gcloud auth login
      ./glcoud/create_tpu.sh <node name>
      python quantus_nlp/main.py --tpu True train
+
+### Download dataset/saved_model
+    dvc pull
