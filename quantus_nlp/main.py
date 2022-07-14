@@ -5,11 +5,19 @@ from __future__ import annotations
 import logging
 import click
 
-from bert import build_model, fine_tune, pre_process_model
+from bert import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
+import json
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+
+
+def base_path(tpu: bool):
+    if tpu:
+        return 'gs://quantus-nlp'
+    else:
+        return '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/'
 
 
 def init_tpu():
@@ -23,27 +31,35 @@ def init_tpu():
 
 
 @click.command
+@click.argument("task")
 @click.option("--epochs", default=10)
 @click.option("--debug", default=False)
 @click.option("--tpu", default=False)
-def main(epochs, debug, tpu):
+def main(task, epochs, debug, tpu):
     if debug:
-        # tf.data.experimental.enable_debug_mode()
-        # tf.config.run_functions_eagerly(True)
         logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
     else:
         logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 
-    device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy("cpu")
-
-    with device.scope():
-
+    if task == 'dataset':
         pl = pre_process_model()
-        train, validation, metadata = save_dataset(pl)
+        save_dataset(pl)
+        return
 
-        tf.data.experimental.save(train, 'bla')
+    if task == 'train':
+        device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
 
-        #fine_tune(model=nn, train_ds=train, val_ds=validation, epochs=epochs)
+        with device.scope():
+            p = base_path(tpu)
+            train = tf.data.experimental.load(f'{p}/dataset/train')
+            val = tf.data.experimental.load(f'{p}/dataset/test')
+            metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
+            metadata = json.loads(metadata)
+            nn = Classifier(metadata['num_classes'])
+
+            fine_tune(model=nn, epochs=epochs, train_ds=train, val_ds=val)
+
+            print()
 
 
 if __name__ == "__main__":

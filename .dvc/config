@@ -1,5 +1,5 @@
 ['remote "GCS"']
-url = gs://quantus-nlp
+url = gs://quantus-nlp/
 [core]
 remote = CGS
 autostage = true

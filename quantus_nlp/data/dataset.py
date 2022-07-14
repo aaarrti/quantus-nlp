@@ -2,25 +2,16 @@ import logging
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from typing import List, Callable
-from dataclasses import dataclass
-
+import json
 
 log = logging.getLogger(__name__)
-
-from quantus_nlp.util import save_pickle
-
-
-@dataclass
-class LabelMetadata:
-    num_classes: int
-    class_names: List[str]
 
 
 def _configure_ds(ds: tf.data.Dataset) -> tf.data.Dataset:
     return ds.cache().prefetch(tf.data.AUTOTUNE)
 
 
-def save_dataset(preprocessor: Callable) -> (tf.data.Dataset, tf.data.Dataset, LabelMetadata):
+def save_dataset(preprocessor: Callable):
     (train, test), metadata = tfds.load(
         "ag_news_subset",
         as_supervised=True,
@@ -44,8 +35,8 @@ def save_dataset(preprocessor: Callable) -> (tf.data.Dataset, tf.data.Dataset, L
         'class_names': metadata.features["label"].names
     }
 
-    save_pickle(lm, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata')
+    s = json.dumps(lm)
+    tf.io.write_file('Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
 
-    return train, test, lm
 
 
