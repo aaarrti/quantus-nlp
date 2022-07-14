@@ -19,7 +19,7 @@ def build_model(num_classes: int) -> tf.keras.Model:
     outputs = encoder(encoder_inputs)
     net = outputs["pooled_output"]
     net = tf.keras.layers.Dropout(0.1)(net)
-    net = tf.keras.layers.Dense(num_classes, activation="sigmoid", name="predictions")(
+    net = tf.keras.layers.Dense(num_classes, activation="softmax", name="predictions")(
         net
     )
     return tf.keras.Model(text_input, net)
@@ -31,19 +31,19 @@ def fine_tune(
     val_ds: tf.data.Dataset,
     epochs: int,
 ) -> Dict:
-    # TODO add weight decay and multi label confusion matrix
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),
-        loss="binary_crossentropy",
-        metrics=["categorical_accuracy"],
-        # jit_compile=True
+        optimizer=tf.keras.optimizers.experimental.AdamW(
+            learning_rate=5e-5, jit_compile=True
+        ),
+        loss="sparse_categorical_crossentropy",
+        metrics=["accuracy"],
     )
 
     model.summary()
 
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="val_loss", factor=0.1, patience=5, min_lr=1e-6
+        monitor="val_loss", factor=0.2, patience=5, min_lr=1e-6
     )
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
     early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=3, verbose=1)
@@ -54,7 +54,8 @@ def fine_tune(
         epochs=epochs,
         verbose=1,
         callbacks=[reduce_lr, terminate_nan, early_stop],
-        return_dict=True,
     )
 
-    return history
+    tf.saved_model.save(model, "model")
+
+    return history.history
