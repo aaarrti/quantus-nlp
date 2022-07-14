@@ -9,7 +9,7 @@
      gcloud config set project linen-synthesis-353917
      gcloud auth login
      ./glcoud/create_tpu.sh <node name>
-     python quantus_nlp/main.py --tpu True train
+     python quantus_nlp/main.py train --tpu --no-jit
 
 ### Download dataset/saved_model
     dvc pull
