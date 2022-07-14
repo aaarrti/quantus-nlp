@@ -39,4 +39,18 @@ def save_dataset(preprocessor: Callable):
     tf.io.write_file('Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
 
 
+def sample_messages() -> List[str]:
+    test = tfds.load(
+        "ag_news_subset",
+        shuffle_files=True,
+        split=["test"],
+        try_gcs=True
+    )
+
+    x = test[0].take(10).map(lambda d: d['description'])
+    x = list(x.as_numpy_iterator())
+    return [i.decode('utf-8') for i in x]
+
+
+
 

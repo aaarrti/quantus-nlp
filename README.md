@@ -5,8 +5,8 @@
 #### Format code
      poetry run black quantus_nlp
 
-#### GCloud compute engine usage
+#### Training on TPU
      gcloud config set project linen-synthesis-353917
      gcloud auth login
-     ./glcoud/create_tpu.sh <node name> | gcloud/connect_to_node.sh <node name>
-     poetry run python quantus_nlp/main.py --tpu True
+     ./glcoud/create_tpu.sh <node name>
+     python quantus_nlp/main.py --tpu True train
