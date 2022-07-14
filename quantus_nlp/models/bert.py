@@ -1,7 +1,6 @@
 import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_text  # noqa
-from typing import Dict, Callable
 import json
 import tensorflow_addons as tfa
 
@@ -31,7 +30,7 @@ class Classifier(tf.keras.Model):
         )
 
         self.encoder = encoder
-        self.dropout = tf.keras.layers.Dropout(0.1)
+        self.dropout = tf.keras.layers.Dropout(0.2)
         self.dense = tf.keras.layers.Dense(num_classes, activation="softmax")
 
     def call(self, preprocessed_text):
