@@ -30,8 +30,6 @@ def save_dataset(preprocessor: Callable):
     val = _configure_ds(val)
     tf.data.experimental.save(val, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/validation')
 
-    test = test.map(lambda x, y: (preprocessor(x), y))
-    test = _configure_ds(test)
     tf.data.experimental.save(test, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test')
 
     lm = {
@@ -43,15 +41,10 @@ def save_dataset(preprocessor: Callable):
     tf.io.write_file('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
 
 
-def sample_messages() -> List[str]:
-    test = tfds.load(
-        "ag_news_subset",
-        shuffle_files=True,
-        split=["test"],
-        try_gcs=True
-    )
+def sample_messages(num_datapoints = 10) -> List[str]:
+    test = tf.data.experimental.load('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test')
 
-    x = test[0].take(10).map(lambda d: d['description'])
+    x = test.unbatch().take(num_datapoints).map(lambda i, j: i)
     x = list(x.as_numpy_iterator())
     return [i.decode('utf-8') for i in x]
 
