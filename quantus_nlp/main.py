@@ -51,8 +51,8 @@ def main(task, epochs, debug, tpu):
 
         with device.scope():
             p = base_path(tpu)
-            train = tf.data.experimental.load(f'{p}/dataset/train').take(10)
-            val = tf.data.experimental.load(f'{p}/dataset/test').take(2)
+            train = tf.data.experimental.load(f'{p}/dataset/train')
+            val = tf.data.experimental.load(f'{p}/dataset/test')
             metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
             metadata = json.loads(metadata)
             nn = Classifier(metadata['num_classes'])

@@ -79,5 +79,5 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         res[i] = [float(j) for j in history.history[i]]
 
     s = json.dumps(res)
-    tf.io.write_file('gs://quantus-nlp/model', s)
+    tf.io.write_file('gs://quantus-nlp/model/history.json', s)
     tf.saved_model.save(model, "gs://quantus-nlp/model/bert")
