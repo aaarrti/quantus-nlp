@@ -31,11 +31,12 @@ def init_tpu():
 
 
 @click.command
-@click.argument("task")
+@click.argument("task", type=click.Choice(['dataset', 'train'], case_sensitive=False))
 @click.option("--epochs", default=10)
-@click.option("--debug", default=False)
-@click.option("--tpu", default=False)
-def main(task, epochs, debug, tpu):
+@click.option("--debug", default=False, is_flag=True)
+@click.option("--tpu", default=False, is_flag=True)
+@click.pass_context
+def main(ctx, task, epochs, debug, tpu):
     if debug:
         logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
     else:
@@ -45,21 +46,19 @@ def main(task, epochs, debug, tpu):
         pl = pre_process_model()
         save_dataset(pl)
         return
-
     if task == 'train':
         device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
 
         with device.scope():
             p = base_path(tpu)
+
             train = tf.data.experimental.load(f'{p}/dataset/train')
             val = tf.data.experimental.load(f'{p}/dataset/test')
             metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
             metadata = json.loads(metadata)
+
             nn = Classifier(metadata['num_classes'])
-
             fine_tune(model=nn, epochs=epochs, train_ds=train, val_ds=val)
-
-            print()
 
 
 if __name__ == "__main__":
