@@ -7,14 +7,26 @@ import click
 
 from bert import build_model, fine_tune
 from data import dataset
+import tensorflow as tf
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+
+
+def init_tpu():
+    print('Connecting to TPU')
+    tpu = tf.distribute.cluster_resolver.TPUClusterResolver()  # TPU detection
+    print('Running on TPU ', tpu.cluster_spec().as_dict()['worker'])
+    tf.config.experimental_connect_to_cluster(tpu)
+    tf.tpu.experimental.initialize_tpu_system(tpu)
+    strategy = tf.distribute.experimental.TPUStrategy(tpu)
+    return strategy
 
 
 @click.command
 @click.option("--epochs", default=10)
 @click.option("--debug", default=False)
-def main(epochs, debug):
+@click.option("--tpu", default=False)
+def main(epochs, debug, tpu):
     if debug:
         # tf.data.experimental.enable_debug_mode()
         # tf.config.run_functions_eagerly(True)
@@ -22,11 +34,14 @@ def main(epochs, debug):
     else:
         logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
 
-    train, validation, metadata = dataset()
+    device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy("cpu")
 
-    nn = build_model(metadata.num_classes)
+    with device.scope():
+        train, validation, metadata = dataset()
 
-    fine_tune(model=nn, train_ds=train, val_ds=validation, epochs=epochs)
+        nn = build_model(metadata.num_classes)
+
+        fine_tune(model=nn, train_ds=train, val_ds=validation, epochs=epochs)
 
 
 if __name__ == "__main__":
