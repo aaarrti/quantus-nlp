@@ -1,7 +1,15 @@
 import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_text  # noqa
-from typing import Dict
+from typing import Dict, Callable
+
+
+def pre_process_model() -> Callable:
+    preprocessing_layer = hub.KerasLayer(
+        "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
+        name="preprocessing"
+    )
+    return preprocessing_layer
 
 
 def build_model(num_classes: int) -> tf.keras.Model:
@@ -9,11 +17,7 @@ def build_model(num_classes: int) -> tf.keras.Model:
 
     text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name="text")
 
-    preprocessing_layer = hub.KerasLayer(
-        "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
-        name="preprocessing",
-        load_options=load_options
-    )
+
     encoder_inputs = preprocessing_layer(text_input)
     encoder = hub.KerasLayer(
         "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2",

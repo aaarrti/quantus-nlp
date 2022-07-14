@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 import click
 
-from bert import build_model, fine_tune
-from data import dataset
+from bert import build_model, fine_tune, pre_process_model
+from data import save_dataset
 import tensorflow as tf
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
@@ -37,15 +37,15 @@ def main(epochs, debug, tpu):
     device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy("cpu")
 
     with device.scope():
-        train, validation, metadata = dataset()
 
-        nn = build_model(metadata.num_classes)
+        pl = pre_process_model()
+        train, validation, metadata = save_dataset(pl)
 
-        fine_tune(model=nn, train_ds=train, val_ds=validation, epochs=epochs)
+        tf.data.experimental.save(train, 'bla')
+
+        #fine_tune(model=nn, train_ds=train, val_ds=validation, epochs=epochs)
 
 
 if __name__ == "__main__":
-    tf.config.set_soft_device_placement(
-        True
-    )
+    tf.config.set_soft_device_placement(True)
     main()
