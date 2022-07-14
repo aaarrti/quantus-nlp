@@ -12,19 +12,23 @@ def _configure_ds(ds: tf.data.Dataset) -> tf.data.Dataset:
 
 
 def save_dataset(preprocessor: Callable):
-    (train, test), metadata = tfds.load(
+    (train, val, test), metadata = tfds.load(
         "ag_news_subset",
         as_supervised=True,
         with_info=True,
         shuffle_files=True,
         batch_size=100,
-        split=["train", "test"],
+        split=['train[:80%]', 'train[80%:]', "test"],
         try_gcs=True,
     )
 
     train = train.map(lambda x, y: (preprocessor(x), y))
     train = _configure_ds(train)
     tf.data.experimental.save(train, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/train')
+
+    val = val.map(lambda x, y: (preprocessor(x), y))
+    val = _configure_ds(val)
+    tf.data.experimental.save(val, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/validation')
 
     test = test.map(lambda x, y: (preprocessor(x), y))
     test = _configure_ds(test)
@@ -36,7 +40,7 @@ def save_dataset(preprocessor: Callable):
     }
 
     s = json.dumps(lm)
-    tf.io.write_file('Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
+    tf.io.write_file('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
 
 
 def sample_messages() -> List[str]:

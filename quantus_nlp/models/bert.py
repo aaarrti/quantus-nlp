@@ -3,6 +3,7 @@ import tensorflow_hub as hub
 import tensorflow_text  # noqa
 from typing import Dict, Callable
 import json
+import tensorflow_addons as tfa
 
 load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
 
@@ -11,7 +12,8 @@ def pre_process_model() -> tf.keras.layers.Layer:
     preprocessing_layer = hub.KerasLayer(
         "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
         name="preprocessing",
-        load_options=load_options
+        load_options=load_options,
+        trainable=False
     )
     return preprocessing_layer
 
@@ -40,13 +42,14 @@ class Classifier(tf.keras.Model):
         return x
 
 
-def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs = 10):
+def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset,
+              epochs=10, jit=True):
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
-        jit_compile=True
+        jit_compile=jit
     )
 
     #models.summary()
@@ -54,13 +57,14 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=3, min_lr=1e-6, min_delta=0.01)
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
     early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=5, verbose=1)
+    progbar = tfa.callbacks.TQDMProgressBar()
 
     history = model.fit(
         x=train_ds,
         validation_data=val_ds,
         epochs=epochs,
-        verbose=1,
-        callbacks=[reduce_lr, terminate_nan, early_stop],
+        verbose=0,
+        callbacks=[reduce_lr, terminate_nan, early_stop, progbar],
     )
 
     res = {}

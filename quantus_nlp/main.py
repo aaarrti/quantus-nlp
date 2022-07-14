@@ -11,14 +11,6 @@ import tensorflow as tf
 import json
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
-
-
-def base_path(tpu: bool):
-    if tpu:
-        return 'gs://quantus-nlp'
-    else:
-        return '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/'
 
 
 def init_tpu():
@@ -31,9 +23,10 @@ def init_tpu():
     return strategy
 
 
-@click.group()
+@click.group(chain=True, invoke_without_command=True)
 def main():
-    pass
+    tf.config.set_soft_device_placement(True)
+    logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
 
 
 @main.command()
@@ -48,22 +41,20 @@ def train(tpu):
     device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
 
     with device.scope():
-        p = base_path(tpu)
-
-        train = tf.data.experimental.load(f'{p}/dataset/train')
-        val = tf.data.experimental.load(f'{p}/dataset/test')
-        metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
+        base_path = 'gs://quantus-nlp' if tpu else '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp'
+        _train = tf.data.experimental.load(f'{base_path}/dataset/train')
+        val = tf.data.experimental.load(f'{base_path}/dataset/validation')
+        metadata = tf.io.read_file(f'{base_path}/dataset/metadata.json').numpy()
         metadata = json.loads(metadata)
 
         nn = Classifier(metadata['num_classes'])
-        fine_tune(model=nn, train_ds=train, val_ds=val)
+        fine_tune(model=nn, train_ds=_train, val_ds=val)
 
 
 @main.command()
 def xai():
-    pass
+    print('TODO')
 
 
 if __name__ == "__main__":
-    tf.config.set_soft_device_placement(True)
     main()
