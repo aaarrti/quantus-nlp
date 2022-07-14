@@ -2,6 +2,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_text  # noqa
 from typing import Dict, Callable
+import json
 
 load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
 
@@ -45,7 +46,7 @@ class Classifier(tf.keras.Model):
         return x
 
 
-def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs: int) -> Dict:
+def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs: int):
 
     adam_w = tf.keras.optimizers.experimental.AdamW(
             #learning_rate=5e-5,
@@ -53,7 +54,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         )
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=5e-5),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
         #jit_compile=True
@@ -61,7 +62,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
 
     #model.summary()
 
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.2, patience=5, min_lr=1e-6)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=5, min_lr=1e-6)
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
     early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=3, verbose=1)
 
@@ -73,5 +74,10 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         callbacks=[reduce_lr, terminate_nan, early_stop],
     )
 
-    #tf.saved_model.save(model, "model")
-    return history.history
+    res = {}
+    for i in history.history:
+        res[i] = [float(j) for j in history.history[i]]
+
+    s = json.dumps(res)
+    tf.io.write_file('gs://quantus-nlp/model', s)
+    tf.saved_model.save(model, "gs://quantus-nlp/model/bert")
