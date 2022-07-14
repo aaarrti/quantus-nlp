@@ -50,11 +50,11 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
     model.compile(
         optimizer=tf.keras.optimizers.experimental.AdamW(
             learning_rate=5e-5,
-            jit_compile=True
+            #jit_compile=True
         ),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
-        jit_compile=True
+        #jit_compile=True
     )
 
     #model.summary()
