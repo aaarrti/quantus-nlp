@@ -57,7 +57,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
-        #jit_compile=True
+        jit_compile=True
     )
 
     #model.summary()
@@ -80,4 +80,4 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
 
     s = json.dumps(res)
     tf.io.write_file('gs://quantus-nlp/model/history.json', s)
-    tf.saved_model.save(model, "gs://quantus-nlp/model/bert")
+    tf.saved_model.save(model, "gs://quantus-nlp/model/encoder")
