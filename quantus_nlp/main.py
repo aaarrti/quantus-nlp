@@ -24,7 +24,9 @@ def init_tpu():
 
 
 @click.group(chain=True, invoke_without_command=True)
-def main():
+@click.pass_context
+def main(ctx):
+    click.secho(f"{ctx = }", fg='yellow', color=True)
     tf.config.set_soft_device_placement(True)
     logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
 
