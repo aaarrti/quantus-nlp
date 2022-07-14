@@ -40,7 +40,7 @@ class Classifier(tf.keras.Model):
         return x
 
 
-def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs: int):
+def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs = 10):
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),

@@ -11,6 +11,7 @@ import tensorflow as tf
 import json
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
 
 
 def base_path(tpu: bool):
@@ -30,35 +31,37 @@ def init_tpu():
     return strategy
 
 
-@click.command
-@click.argument("task", type=click.Choice(['dataset', 'train'], case_sensitive=False))
-@click.option("--epochs", default=10)
-@click.option("--debug", default=False, is_flag=True)
-@click.option("--tpu", default=False, is_flag=True)
-@click.pass_context
-def main(ctx, task, epochs, debug, tpu):
-    if debug:
-        logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
-    else:
-        logging.basicConfig(format=LOG_FORMAT, level=logging.INFO)
+@click.group()
+def main():
+    pass
 
-    if task == 'dataset':
-        pl = pre_process_model()
-        save_dataset(pl)
-        return
-    if task == 'train':
-        device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
 
-        with device.scope():
-            p = base_path(tpu)
+@main.command()
+def dataset():
+    pl = pre_process_model()
+    save_dataset(pl)
 
-            train = tf.data.experimental.load(f'{p}/dataset/train')
-            val = tf.data.experimental.load(f'{p}/dataset/test')
-            metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
-            metadata = json.loads(metadata)
 
-            nn = Classifier(metadata['num_classes'])
-            fine_tune(model=nn, epochs=epochs, train_ds=train, val_ds=val)
+@main.command()
+@click.option("--tpu", default=False, is_flag=True, help='Enable TPU')
+def train(tpu):
+    device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
+
+    with device.scope():
+        p = base_path(tpu)
+
+        train = tf.data.experimental.load(f'{p}/dataset/train')
+        val = tf.data.experimental.load(f'{p}/dataset/test')
+        metadata = tf.io.read_file(f'{p}/dataset/metadata.json').numpy()
+        metadata = json.loads(metadata)
+
+        nn = Classifier(metadata['num_classes'])
+        fine_tune(model=nn, train_ds=train, val_ds=val)
+
+
+@main.command()
+def xai():
+    pass
 
 
 if __name__ == "__main__":
