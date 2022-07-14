@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 
 def _configure_ds(ds: tf.data.Dataset) -> tf.data.Dataset:
-    return ds.cache().prefetch(tf.data.AUTOTUNE)
+    return ds.shuffle(1000).cache().prefetch(tf.data.AUTOTUNE)
 
 
 def save_dataset(preprocessor: Callable):

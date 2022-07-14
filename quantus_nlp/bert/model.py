@@ -35,7 +35,7 @@ class Classifier(tf.keras.Model):
 
         self.encoder = encoder
         self.dropout = tf.keras.layers.Dropout(0.1)
-        self.dense = tf.keras.layers.Dense(num_classes)
+        self.dense = tf.keras.layers.Dense(num_classes, activation="softmax")
 
     def call(self, preprocessed_text):
         encoder_outputs = self.encoder(preprocessed_text)
