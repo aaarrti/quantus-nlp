@@ -55,7 +55,7 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         jit_compile=True
     )
 
-    #model.summary()
+    #models.summary()
 
     reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=3, min_lr=1e-6, min_delta=0.01)
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
@@ -74,5 +74,5 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
         res[i] = [float(j) for j in history.history[i]]
 
     s = json.dumps(res)
-    tf.io.write_file('gs://quantus-nlp/model/history.json', s)
-    tf.saved_model.save(model, "gs://quantus-nlp/model/encoder")
+    tf.io.write_file('gs://quantus-nlp/models/history.json', s)
+    tf.saved_model.save(model, "gs://quantus-nlp/models/encoder")

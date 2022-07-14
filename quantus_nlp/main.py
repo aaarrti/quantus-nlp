@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import click
 
-from bert import Classifier, fine_tune, pre_process_model
+from model import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
 import json
