@@ -14,9 +14,9 @@ LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 
 
 def init_tpu():
-    print("Connecting to TPU")
+    click.secho("Connecting to TPU", fg='yellow', color=True)
     tpu = tf.distribute.cluster_resolver.TPUClusterResolver()  # TPU detection
-    print("Running on TPU ", tpu.cluster_spec().as_dict()["worker"])
+    click.secho(f"Running on TPU: {tpu.cluster_spec().as_dict()['worker']}", fg='yellow', color=True)
     tf.config.experimental_connect_to_cluster(tpu)
     tf.tpu.experimental.initialize_tpu_system(tpu)
     strategy = tf.distribute.experimental.TPUStrategy(tpu)
@@ -59,7 +59,7 @@ def train(tpu, no_jit, epochs):
 
 @main.command()
 def xai():
-    print("TODO")
+    click.echo('Not implemented', err=True)
 
 
 if __name__ == "__main__":
