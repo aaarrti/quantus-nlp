@@ -48,7 +48,7 @@ class Classifier(tf.keras.Model):
 def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.Dataset, epochs: int) -> Dict:
 
     adam_w = tf.keras.optimizers.experimental.AdamW(
-            learning_rate=5e-5,
+            #learning_rate=5e-5,
             #jit_compile=True
         )
 
