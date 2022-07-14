@@ -62,9 +62,9 @@ def fine_tune(model: tf.keras.Model, train_ds: tf.data.Dataset, val_ds: tf.data.
 
     #model.summary()
 
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=5, min_lr=1e-6)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=3, min_lr=1e-6, min_delta=0.01)
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
-    early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=3, verbose=1)
+    early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=5, verbose=1)
 
     history = model.fit(
         x=train_ds,
