@@ -37,7 +37,9 @@ def dataset():
 
 @main.command()
 @click.option("--tpu", default=False, is_flag=True, help='Enable TPU')
-def train(tpu):
+@click.option('--no-jit', default=False, is_flag=True, help='Disable XLA')
+@click.option('--epochs', default=10, help='Number of epochs to train')
+def train(tpu, no_jit, epochs):
     device = init_tpu() if tpu else tf.distribute.OneDeviceStrategy('cpu')
 
     with device.scope():
@@ -48,7 +50,7 @@ def train(tpu):
         metadata = json.loads(metadata)
 
         nn = Classifier(metadata['num_classes'])
-        fine_tune(model=nn, train_ds=_train, val_ds=val)
+        fine_tune(model=nn, train_ds=_train, val_ds=val, jit=not no_jit, epochs=epochs)
 
 
 @main.command()
