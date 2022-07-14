@@ -18,36 +18,44 @@ def save_dataset(preprocessor: Callable):
         with_info=True,
         shuffle_files=True,
         batch_size=100,
-        split=['train[:80%]', 'train[80%:]', "test"],
+        split=["train[:80%]", "train[80%:]", "test"],
         try_gcs=True,
     )
 
     train = train.map(lambda x, y: (preprocessor(x), y))
     train = _configure_ds(train)
-    tf.data.experimental.save(train, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/train')
+    tf.data.experimental.save(
+        train, "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/train"
+    )
 
     val = val.map(lambda x, y: (preprocessor(x), y))
     val = _configure_ds(val)
-    tf.data.experimental.save(val, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/validation')
+    tf.data.experimental.save(
+        val,
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/validation",
+    )
 
-    tf.data.experimental.save(test, '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test')
+    tf.data.experimental.save(
+        test, "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test"
+    )
 
     lm = {
-        'num_classes': metadata.features["label"].num_classes,
-        'class_names': metadata.features["label"].names
+        "num_classes": metadata.features["label"].num_classes,
+        "class_names": metadata.features["label"].names,
     }
 
     s = json.dumps(lm)
-    tf.io.write_file('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json', s)
+    tf.io.write_file(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json",
+        s,
+    )
 
 
-def sample_messages(num_datapoints = 10) -> List[str]:
-    test = tf.data.experimental.load('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test')
+def sample_messages(num_datapoints=10) -> List[str]:
+    test = tf.data.experimental.load(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/test"
+    )
 
     x = test.unbatch().take(num_datapoints).map(lambda i, j: i)
     x = list(x.as_numpy_iterator())
-    return [i.decode('utf-8') for i in x]
-
-
-
-
+    return [i.decode("utf-8") for i in x]

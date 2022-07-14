@@ -4,7 +4,7 @@ import tensorflow_text  # noqa
 import json
 import tensorflow_addons as tfa
 
-load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
+load_options = tf.saved_model.LoadOptions(experimental_io_device="/job:localhost")
 
 
 def pre_process_model() -> tf.keras.layers.Layer:
@@ -12,13 +12,12 @@ def pre_process_model() -> tf.keras.layers.Layer:
         "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
         name="preprocessing",
         load_options=load_options,
-        trainable=False
+        trainable=False,
     )
     return preprocessing_layer
 
 
 class Classifier(tf.keras.Model):
-
     def __init__(self, num_classes):
         super(Classifier, self).__init__(name="prediction")
 
@@ -26,7 +25,7 @@ class Classifier(tf.keras.Model):
             "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2",
             trainable=True,
             name="BERT_encoder",
-            load_options=load_options
+            load_options=load_options,
         )
 
         self.encoder = encoder
@@ -41,20 +40,26 @@ class Classifier(tf.keras.Model):
         return x
 
 
-def fine_tune(model: tf.keras.Model,
-              train_ds: tf.data.Dataset, val_ds: tf.data.Dataset,
-              epochs=10, jit=True):
+def fine_tune(
+    model: tf.keras.Model,
+    train_ds: tf.data.Dataset,
+    val_ds: tf.data.Dataset,
+    epochs=10,
+    jit=True,
+):
 
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
-        jit_compile=jit
+        jit_compile=jit,
     )
 
-    #models.summary()
+    # models.summary()
 
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.1, patience=3, min_lr=1e-6, min_delta=0.01)
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+        monitor="val_loss", factor=0.1, patience=3, min_lr=1e-6, min_delta=0.01
+    )
     terminate_nan = tf.keras.callbacks.TerminateOnNaN()
     early_stop = tf.keras.callbacks.EarlyStopping(monitor="loss", patience=5, verbose=1)
     progbar = tfa.callbacks.TQDMProgressBar()
@@ -72,5 +77,5 @@ def fine_tune(model: tf.keras.Model,
         res[i] = [float(j) for j in history.history[i]]
 
     s = json.dumps(res)
-    tf.io.write_file('gs://quantus-nlp/model/history.json', s)
+    tf.io.write_file("gs://quantus-nlp/model/history.json", s)
     tf.saved_model.save(model, "gs://quantus-nlp/model/encoder")
