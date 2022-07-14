@@ -16,12 +16,6 @@ def pre_process_model() -> tf.keras.layers.Layer:
     return preprocessing_layer
 
 
-class PooledOutputLayer(tf.keras.layers.Layer):
-
-    def call(self, inputs):
-        return inputs["pooled_output"]
-
-
 class Classifier(tf.keras.Model):
 
     def __init__(self, num_classes):
