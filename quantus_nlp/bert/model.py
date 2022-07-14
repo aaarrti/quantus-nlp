@@ -5,16 +5,21 @@ from typing import Dict
 
 
 def build_model(num_classes: int) -> tf.keras.Model:
+    load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
+
     text_input = tf.keras.layers.Input(shape=(), dtype=tf.string, name="text")
+
     preprocessing_layer = hub.KerasLayer(
         "https://tfhub.dev/tensorflow/bert_en_uncased_preprocess/3",
         name="preprocessing",
+        load_options=load_options
     )
     encoder_inputs = preprocessing_layer(text_input)
     encoder = hub.KerasLayer(
         "https://tfhub.dev/tensorflow/small_bert/bert_en_uncased_L-2_H-128_A-2/2",
         trainable=True,
         name="BERT_encoder",
+        load_options=load_options
     )
     outputs = encoder(encoder_inputs)
     net = outputs["pooled_output"]
