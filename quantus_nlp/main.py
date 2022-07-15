@@ -9,6 +9,7 @@ from models import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
 import json
+from xai import LitDatasetAdapter
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 
@@ -61,7 +62,9 @@ def train(tpu, no_jit, epochs):
 
 @main.command()
 def xai():
-    click.echo('Not implemented', err=True)
+    ds = LitDatasetAdapter()
+    click.echo(f'Spec ==> {ds.spec()}')
+    click.echo(f'Examples ==> {ds.examples}')
 
 
 if __name__ == "__main__":

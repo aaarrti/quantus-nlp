@@ -9,7 +9,6 @@ from typing import Dict
 
 class LitModelAdapter(lit_model.Model):
 
-
     def get_embedding_table(self) -> Tuple[List[Text], np.ndarray]:
         pass
 
@@ -32,6 +31,5 @@ class LitDatasetAdapter(lit_dataset.Dataset):
         # Store as a list of dicts, conforming to self.spec()
         self._examples = [{}]
 
-    def spec(self) -> Dict[str, ...]:
+    def spec(self) -> Dict[str, any]:
         pass
-
