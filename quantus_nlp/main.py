@@ -9,9 +9,10 @@ from models import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
 import json
-from xai import LitDatasetAdapter
+from xai import LitDatasetAdapter, LitModelAdapter
+from lit_nlp.components import lime_explainer, gradient_maps
 
-LOG_FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"
 
 
 def init_tpu():
@@ -63,8 +64,16 @@ def train(tpu, no_jit, epochs):
 @main.command()
 def xai():
     ds = LitDatasetAdapter()
-    click.echo(f'Spec ==> {ds.spec()}')
-    click.echo(f'Examples ==> {ds.examples}')
+    nn = LitModelAdapter()
+
+    lime = lime_explainer.LIME()
+
+    lime_results = lime.run(ds.examples[:1], nn, ds)[0]
+    click.echo(f'{lime_results = }')
+
+    #ig = gradient_maps.IntegratedGradients()
+    #integrated_grad_result = ig.run(ds.examples[:1], nn, ds)[0]
+    #click.echo(f'{integrated_grad_result = }')
 
 
 if __name__ == "__main__":
