@@ -1,1 +1,1 @@
-from .dataset import *
+from .ag_news import *
