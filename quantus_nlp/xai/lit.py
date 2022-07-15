@@ -9,16 +9,19 @@ from typing import Dict
 from lit_nlp.api import types as lit_types
 import json
 
-
 from quantus_nlp.models import pre_process_model
 from quantus_nlp.util import log_after, log_before
 
 
-class LitModelAdapter(lit_model.Model):
+class LitLimeModelAdapter(lit_model.Model):
 
     def __init__(self):
         self.pre_process = pre_process_model()
         self.transformer = tf.saved_model.load('/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder')
+        metadata = tf.io.read_file(
+            '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json'
+        ).numpy()
+        self.metadata = json.loads(metadata)
 
     def get_embedding_table(self) -> Tuple[List[Text], np.ndarray]:
         super().get_embedding_table()
@@ -27,13 +30,8 @@ class LitModelAdapter(lit_model.Model):
         super().fit_transform_with_metadata(indexed_inputs)
 
     def output_spec(self) -> types.Spec:
-        metadata = tf.io.read_file(
-            '/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json'
-        ).numpy()
-        metadata = json.loads(metadata)
         return {
-            # The 'parent' keyword tells LIT where to look for gold labels when computing metrics.
-            'probs': lit_types.MulticlassPreds(vocab=metadata['class_names'], parent='label'),
+            'probs': lit_types.MulticlassPreds(vocab=self.metadata['class_names'], parent='label'),
         }
 
     def input_spec(self) -> types.Spec:
@@ -48,6 +46,29 @@ class LitModelAdapter(lit_model.Model):
         return [{
             'probs': res.numpy()[0]
         }]
+
+
+class LitIntegratedGradientModelAdapter(LitLimeModelAdapter):
+
+    def output_spec(self) -> types.Spec:
+        return {
+            "tokens": lit_types.Tokens(parent="input_text"),
+            "token_embs": lit_types.TokenEmbeddings(align='tokens'),
+            "grad_class": lit_types.CategoryLabel(vocab=list(range(self.metadata['num_classes']))),
+            "token_grads": lit_types.TokenGradients(align='tokens',
+                                                    grad_for="token_embs",
+                                                    grad_target_field_key="grad_class"),
+        }
+
+    def input_spec(self):
+        return {
+            "token_embs": lit_types.TokenEmbeddings(align='tokens', required=False),
+            "grad_class": lit_types.CategoryLabel(vocab=list(range(self.metadata['num_classes'])), required=False),
+        }
+
+    @log_before
+    def predict_minibatch(self, inputs: List[JsonDict]) -> List[JsonDict]:
+        pass
 
 
 class LitDatasetAdapter(lit_dataset.Dataset):

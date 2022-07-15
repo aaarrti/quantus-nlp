@@ -9,7 +9,7 @@ from models import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
 import json
-from xai import LitDatasetAdapter, LitModelAdapter
+from xai import LitDatasetAdapter, LitLimeModelAdapter, LitIntegratedGradientModelAdapter
 from lit_nlp.components import lime_explainer, gradient_maps
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"
@@ -61,19 +61,25 @@ def train(tpu, no_jit, epochs):
         fine_tune(model=nn, train_ds=_train, val_ds=val, jit=not no_jit, epochs=epochs)
 
 
-@main.command()
-def xai():
+@main.command("xai-lime")
+def xai_lime():
     ds = LitDatasetAdapter()
-    nn = LitModelAdapter()
+    nn = LitLimeModelAdapter()
 
     lime = lime_explainer.LIME()
 
     lime_results = lime.run(ds.examples[:1], nn, ds)[0]
     click.echo(f'{lime_results = }')
 
-    #ig = gradient_maps.IntegratedGradients()
-    #integrated_grad_result = ig.run(ds.examples[:1], nn, ds)[0]
-    #click.echo(f'{integrated_grad_result = }')
+
+@main.command("xai-ig")
+def xai_ig():
+    ds = LitDatasetAdapter()
+    nn = LitIntegratedGradientModelAdapter()
+
+    ig = gradient_maps.IntegratedGradients()
+    integrated_grad_result = ig.run(ds.examples[:1], nn, ds)[0]
+    click.echo(f'{integrated_grad_result = }')
 
 
 if __name__ == "__main__":
