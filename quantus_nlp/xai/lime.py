@@ -77,7 +77,7 @@ def explain_lime(
     lime = lime_explainer.LIME()
 
     lime_results = lime.run([{"text": example}], lm, None)[0]
-    print(f"{lime_results = }")
+    # print(f"{lime_results = }")
     tokens = np.asarray(lime_results["text"].tokens)
     salience = lime_results["text"].salience
     return tokens, salience

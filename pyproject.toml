@@ -8,6 +8,8 @@ authors = ["Artem Sereda <artem.sereda@campus.tu-berlin.de>"]
 
 python = "3.9"
 jax = "^0.3.14"
+nlpaug = "^1.1.11"
+nltk = "^3.7"
 
 
 

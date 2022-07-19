@@ -10,6 +10,8 @@ from data import save_dataset
 import tensorflow as tf
 import json
 from xai.lime import explain_lime
+from xai.metric import relative_input_stability
+import nlpaug.augmenter.word as naw
 
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"
@@ -66,8 +68,7 @@ def train(tpu, no_jit, epochs):
 
 
 @main.command("xai-lime")
-@click.argument("sentence", required=True, type=str)
-def xai_lime(sentence):
+def xai_lime():
     pm = pre_process_model()
     transformer = tf.saved_model.load(
         "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder"
@@ -80,8 +81,57 @@ def xai_lime(sentence):
         pre_process_model=pm,
         transformer=transformer,
         class_names=metadata["class_names"],
-        example=sentence,
+        example='CHARLOTTE, N.C. (Sports Network) - Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday.'
     )
+
+
+@main.command()
+def ris():
+    text = 'Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday'
+
+    aug = naw.SpellingAug()
+    augmented_text = aug.augment(text, n=1)[0]
+    click.echo(f'{text =}')
+    click.echo(f'{augmented_text = }')
+    pm = pre_process_model()
+    transformer = tf.saved_model.load(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder"
+    )
+    metadata = tf.io.read_file(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json"
+    ).numpy()
+    metadata = json.loads(metadata)
+
+    _, e = explain_lime(
+        pm,
+        transformer,
+        metadata['class_names'],
+        text
+    )
+
+    _, es = explain_lime(
+        pm,
+        transformer,
+        metadata['class_names'],
+        augmented_text
+    )
+
+    click.echo(f'{e = }')
+    click.echo(f'{es = }')
+
+    x = pm([text])['input_word_ids']
+    x = x.numpy()[0]
+    x = x[:len(e)]
+
+    xs = pm([augmented_text])['input_word_ids']
+    xs = xs.numpy()[0]
+    xs = xs[:len(es)]
+
+    res = relative_input_stability(
+        x, xs,
+        e, es
+    )
+    click.echo(f'RIS = {res}')
 
 
 if __name__ == "__main__":
