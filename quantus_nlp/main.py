@@ -9,16 +9,20 @@ from models import Classifier, fine_tune, pre_process_model
 from data import save_dataset
 import tensorflow as tf
 import json
-from xai import LitDatasetAdapter, LitLimeModelAdapter, LitIntegratedGradientModelAdapter
-from lit_nlp.components import lime_explainer, gradient_maps
+from xai.lime import explain_lime
+
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"
 
 
 def init_tpu():
-    click.secho("Connecting to TPU", fg='yellow', color=True)
+    click.secho("Connecting to TPU", fg="yellow", color=True)
     tpu = tf.distribute.cluster_resolver.TPUClusterResolver()  # TPU detection
-    click.secho(f"Running on TPU: {tpu.cluster_spec().as_dict()['worker']}", fg='yellow', color=True)
+    click.secho(
+        f"Running on TPU: {tpu.cluster_spec().as_dict()['worker']}",
+        fg="yellow",
+        color=True,
+    )
     tf.config.experimental_connect_to_cluster(tpu)
     tf.tpu.experimental.initialize_tpu_system(tpu)
     strategy = tf.distribute.experimental.TPUStrategy(tpu)
@@ -28,7 +32,7 @@ def init_tpu():
 @click.group(chain=True, invoke_without_command=True)
 @click.pass_context
 def main(ctx):
-    click.secho(f"{ctx = }", fg='yellow', color=True)
+    click.secho(f"{ctx = }", fg="yellow", color=True)
     tf.config.set_soft_device_placement(True)
     logging.basicConfig(format=LOG_FORMAT, level=logging.DEBUG)
 
@@ -62,24 +66,22 @@ def train(tpu, no_jit, epochs):
 
 
 @main.command("xai-lime")
-def xai_lime():
-    ds = LitDatasetAdapter()
-    nn = LitLimeModelAdapter()
-
-    lime = lime_explainer.LIME()
-
-    lime_results = lime.run(ds.examples[:1], nn, ds)[0]
-    click.echo(f'{lime_results = }')
-
-
-@main.command("xai-ig")
-def xai_ig():
-    ds = LitDatasetAdapter()
-    nn = LitIntegratedGradientModelAdapter()
-
-    ig = gradient_maps.IntegratedGradients()
-    integrated_grad_result = ig.run(ds.examples[:1], nn, ds)[0]
-    click.echo(f'{integrated_grad_result = }')
+@click.argument("sentence", required=True, type=str)
+def xai_lime(sentence):
+    pm = pre_process_model()
+    transformer = tf.saved_model.load(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder"
+    )
+    metadata = tf.io.read_file(
+        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json"
+    ).numpy()
+    metadata = json.loads(metadata)
+    explain_lime(
+        pre_process_model=pm,
+        transformer=transformer,
+        class_names=metadata["class_names"],
+        example=sentence,
+    )
 
 
 if __name__ == "__main__":
