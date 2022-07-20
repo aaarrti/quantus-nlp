@@ -1,7 +1,11 @@
 #### Make sure to have [poetry](https://python-poetry.org/) installed
 
+#### Check quantus_nlp/examples for usage example e.g.
+     poetry run python quantus_nlp/examples/main.py ris
+
 #### Lint 
      poetry run flake8 quantus_nlp
+
 #### Format code
      poetry run black quantus_nlp
 
