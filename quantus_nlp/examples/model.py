@@ -78,10 +78,9 @@ class TrainableClassifier(tf.keras.Model):
         tf.saved_model.save(self.transformer, "gs://quantus-nlp/model/encoder")
 
 
-class PreTrainedClassifier(TextClassificationModel, TrainableClassifier):
-    def __init__(self) -> None:
-        super().__init__()
-        self.transformer = tf.saved_model.load("/model/encoder")
+class PreTrainedClassifier:
+    def __init__(self):
+        self.transformer = tf.saved_model.load("/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder")
         self.emdedder = pre_process_model()
 
     def call(self, x):

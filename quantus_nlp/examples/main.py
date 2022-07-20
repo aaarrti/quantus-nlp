@@ -7,8 +7,8 @@ from quantus_nlp.xai import LimeExplainer
 from quantus_nlp.util import aug_spelling
 from quantus_nlp.metrics.ris import RelativeInputStability
 
-from .model import TrainableClassifier, pre_process_model, PreTrainedClassifier
-from .dataset import save_ag_news_dataset
+from model import TrainableClassifier, pre_process_model, PreTrainedClassifier
+from dataset import save_ag_news_dataset
 
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"

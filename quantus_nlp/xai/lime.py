@@ -41,9 +41,7 @@ class LitLimeModelAdapter(Model):
 
 class LimeExplainer(NlpExplanation):
     def __init__(self, model: TextClassificationModel, class_names: List[str]):
-        self.lime_adapter = LitLimeModelAdapter(
-            model.emdedder, model.transformer, class_names
-        )
+        self.lime_adapter = LitLimeModelAdapter(model, class_names)
         self.lime = lime_explainer.LIME()
 
     def __call__(self, example: str) -> Tuple[np.ndarray, np.ndarray]:
