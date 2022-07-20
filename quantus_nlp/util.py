@@ -1,5 +1,7 @@
+import re
 import inspect
 import functools
+import nlpaug.augmenter.word as naw
 
 
 def log_before(func):
@@ -22,3 +24,15 @@ def log_after(func):
         return retval
 
     return wrapper
+
+
+def remove_punctuation(x: str) -> str:
+    x = re.sub(r"\W+", " ", x)
+    x = re.sub(r"\s+", " ", x)
+    return x
+
+
+def aug_spelling(w: str) -> str:
+    aug = naw.SpellingAug()
+    augmented_text = aug.augment(w, n=1)
+    return augmented_text[0]

@@ -1,17 +1,14 @@
-from __future__ import print_function
-from __future__ import with_statement
-from __future__ import annotations
-
 import logging
 import click
-
-from models import Classifier, fine_tune, pre_process_model
-from data import save_dataset
 import tensorflow as tf
 import json
-from xai.lime import explain_lime
-from xai.metric import relative_input_stability
-import nlpaug.augmenter.word as naw
+
+from quantus_nlp.xai import LimeExplainer
+from quantus_nlp.util import aug_spelling
+from quantus_nlp.metrics.ris import RelativeInputStability
+
+from .model import TrainableClassifier, pre_process_model, PreTrainedClassifier
+from .dataset import save_ag_news_dataset
 
 
 LOG_FORMAT = "[%(filename)s:%(lineno)s:%(funcName)s()] %(message)s"
@@ -42,7 +39,7 @@ def main(ctx):
 @main.command()
 def dataset():
     pl = pre_process_model()
-    save_dataset(pl)
+    save_ag_news_dataset(pl)
 
 
 @main.command()
@@ -63,75 +60,55 @@ def train(tpu, no_jit, epochs):
         metadata = tf.io.read_file(f"{base_path}/dataset/metadata.json").numpy()
         metadata = json.loads(metadata)
 
-        nn = Classifier(metadata["num_classes"])
-        fine_tune(model=nn, train_ds=_train, val_ds=val, jit=not no_jit, epochs=epochs)
+        nn = TrainableClassifier(metadata["num_classes"])
+        nn.fine_tune(train_ds=_train, val_ds=val, jit=not no_jit, epochs=epochs)
 
 
 @main.command("xai-lime")
 def xai_lime():
-    pm = pre_process_model()
-    transformer = tf.saved_model.load(
-        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder"
-    )
+    model = PreTrainedClassifier()
     metadata = tf.io.read_file(
         "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json"
     ).numpy()
     metadata = json.loads(metadata)
-    explain_lime(
-        pre_process_model=pm,
-        transformer=transformer,
-        class_names=metadata["class_names"],
-        example='CHARLOTTE, N.C. (Sports Network) - Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday.'
+
+    ex = LimeExplainer(model, metadata["class_names"])
+
+    res = ex(
+        example="CHARLOTTE, N.C. (Sports Network) - Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday."
     )
+    print(f"LIME results = {res}")
 
 
 @main.command()
 def ris():
-    text = 'Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday'
+    text = "Carolina Panthers  running back Stephen Davis will miss the remainder of the  season after being placed on injured reserve Saturday"
+    aug_text = aug_spelling(text)
 
-    aug = naw.SpellingAug()
-    augmented_text = aug.augment(text, n=1)[0]
-    click.echo(f'{text =}')
-    click.echo(f'{augmented_text = }')
-    pm = pre_process_model()
-    transformer = tf.saved_model.load(
-        "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/model/encoder"
-    )
     metadata = tf.io.read_file(
         "/Users/artemsereda/Documents/PycharmProjects/quantus-nlp/dataset/metadata.json"
     ).numpy()
     metadata = json.loads(metadata)
 
-    _, e = explain_lime(
-        pm,
-        transformer,
-        metadata['class_names'],
-        text
-    )
+    model = PreTrainedClassifier()
 
-    _, es = explain_lime(
-        pm,
-        transformer,
-        metadata['class_names'],
-        augmented_text
-    )
+    ex = LimeExplainer(model, metadata["class_names"])
 
-    click.echo(f'{e = }')
-    click.echo(f'{es = }')
+    _, e = ex(text)
+    _, es = ex(aug_text)
 
-    x = pm([text])['input_word_ids']
-    x = x.numpy()[0]
-    x = x[:len(e)]
+    x = model.text_to_vector(text)
+    xs = model.text_to_vector(aug_text)
 
-    xs = pm([augmented_text])['input_word_ids']
-    xs = xs.numpy()[0]
-    xs = xs[:len(es)]
+    # slice embedding to match the size of explanations
+    # anyway all word ids afterward are 0
+    x = x[: len(e)]
+    xs = xs[: len(es)]
 
-    res = relative_input_stability(
-        x, xs,
-        e, es
-    )
-    click.echo(f'RIS = {res}')
+    metric = RelativeInputStability()
+    res = metric(x=x, x_s=xs, ex=e, ex_s=es)
+
+    click.echo(f"RIS = {res}")
 
 
 if __name__ == "__main__":

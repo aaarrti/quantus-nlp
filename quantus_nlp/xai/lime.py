@@ -1,24 +1,21 @@
 from typing import List, Tuple, Text
-import tensorflow as tf
 
 import numpy as np
-from lit_nlp.api import model as lit_model, types
-from lit_nlp.api.model import JsonDict
-from lit_nlp.api import dataset as lit_dataset
-from typing import Dict
+from lit_nlp.api import types
+from lit_nlp.api.model import JsonDict, Model
 from lit_nlp.api import types as lit_types
 from lit_nlp.components import lime_explainer
+from quantus_nlp.interfaces import TextClassificationModel, NlpExplanation
 
 
-class LitLimeModelAdapter(lit_model.Model):
+class LitLimeModelAdapter(Model):
     def __init__(
         self,
-        pre_process_model: tf.keras.Model,
-        transformer: tf.keras.Model,
+        model: TextClassificationModel,
         class_names: List[str],
     ):
-        self.pre_process_model = pre_process_model
-        self.transformer = transformer
+        self.pre_process_model = model.emdedder
+        self.transformer = model.transformer
         self.class_names = class_names
 
     def get_embedding_table(self) -> Tuple[List[Text], np.ndarray]:
@@ -42,42 +39,15 @@ class LitLimeModelAdapter(lit_model.Model):
         return [{"probs": res.numpy()[0]}]
 
 
-class LitDatasetAdapter(lit_dataset.Dataset):
-    def __init__(self, test_ds: tf.data.Dataset, num_data_points=None):
-        super().__init__()
-        ds = test_ds
-        ds = ds.unbatch()
-        if num_data_points:
-            ds = ds.take(num_data_points)
-        ds = ds.map(lambda i, j: {"text": i, "label": j})
-        ds = list(ds.as_numpy_iterator())
-        for d in ds:
-            d["text"] = d["text"].decode("utf-8")
-        self._examples = ds
+class LimeExplainer(NlpExplanation):
+    def __init__(self, model: TextClassificationModel, class_names: List[str]):
+        self.lime_adapter = LitLimeModelAdapter(
+            model.emdedder, model.transformer, class_names
+        )
+        self.lime = lime_explainer.LIME()
 
-    def spec(self) -> Dict[str, any]:
-        return {"text": lit_types.TextSegment()}
-
-
-def explain_lime(
-    pre_process_model: tf.keras.Model,
-    transformer: tf.keras.Model,
-    class_names: List[str],
-    example: str,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    :param pre_process_model: embedder model
-    :param transformer: transformer model
-    :param class_names: corresponding labels
-    :param example: sentence which must be explained
-    :return: a Tuple of tokens in example + their salience
-    """
-    lm = LitLimeModelAdapter(pre_process_model, transformer, class_names)
-
-    lime = lime_explainer.LIME()
-
-    lime_results = lime.run([{"text": example}], lm, None)[0]
-    # print(f"{lime_results = }")
-    tokens = np.asarray(lime_results["text"].tokens)
-    salience = lime_results["text"].salience
-    return tokens, salience
+    def __call__(self, example: str) -> Tuple[np.ndarray, np.ndarray]:
+        lime_results = self.lime.run([{"text": example}], self.lime_adapter, None)[0]
+        tokens = np.asarray(lime_results["text"].tokens)
+        salience = lime_results["text"].salience
+        return tokens, salience
