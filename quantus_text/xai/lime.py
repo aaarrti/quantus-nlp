@@ -5,7 +5,7 @@ from lit_nlp.api import types
 from lit_nlp.api.model import JsonDict, Model
 from lit_nlp.api import types as lit_types
 from lit_nlp.components import lime_explainer
-from quantus_nlp.interfaces import TextClassificationModel, NlpExplanation
+from quantus_text.interfaces import TextClassificationModel, NlpExplanation
 
 
 class LitLimeModelAdapter(Model):

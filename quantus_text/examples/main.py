@@ -3,9 +3,9 @@ import click
 import tensorflow as tf
 import json
 
-from quantus_nlp.xai import LimeExplainer
-from quantus_nlp.util import aug_spelling
-from quantus_nlp.metrics.ris import RelativeInputStability
+from quantus_text.xai import LimeExplainer
+from quantus_text.util import aug_spelling
+from quantus_text.metrics.ris import RelativeInputStability
 
 from model import TrainableClassifier, pre_process_model, PreTrainedClassifier
 from dataset import save_ag_news_dataset

@@ -1,5 +1,5 @@
 import numpy as np
-from quantus_nlp.interfaces import XaiMetric
+from quantus_text.interfaces import XaiMetric
 
 
 class RelativeInputStability(XaiMetric):

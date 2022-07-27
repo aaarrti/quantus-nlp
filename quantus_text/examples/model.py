@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_text  # noqa
 import tensorflow_hub as hub
-from quantus_nlp.interfaces import TextClassificationModel
+from quantus_text.interfaces import TextClassificationModel
 import json
 
 load_options = tf.saved_model.LoadOptions(experimental_io_device="/job:localhost")
